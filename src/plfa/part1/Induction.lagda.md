@@ -106,6 +106,7 @@ _ =
     3 + (4 + 5)
   ∎
 ```
+
 Here we have displayed the computation as a chain of equations,
 one term to a line.  It is often easiest to read such chains from the top down
 until one reaches the simplest term (in this case, `12`), and
@@ -702,7 +703,41 @@ first four days using a finite story of creation, as
 [earlier](/Naturals/#finite-creation).
 
 ```agda
--- Your code goes here
++-assoc-3 : ∀ (n p : ℕ) → (3 + n) + p ≡ 3 + (n + p)
++-assoc-3 n p =
+  begin
+    (3 + n) + p
+  ≡⟨⟩
+    (suc 2 + n) + p
+  ≡⟨⟩
+    suc (2 + n) + p
+  ≡⟨⟩
+    suc ((2 + n) + p)
+  ≡⟨ cong suc (+-assoc-2 n p) ⟩
+    suc (2 + (n + p))
+  ≡⟨⟩
+    suc 2 + (n + p)
+  ≡⟨⟩
+    3 + (n + p)
+  ∎
+
++-assoc-4 : ∀ (n p : ℕ) → (4 + n) + p ≡ 4 + (n + p)
++-assoc-4 n p =
+  begin
+    (4 + n) + p
+  ≡⟨⟩
+    (suc 3 + n) + p
+  ≡⟨⟩
+    suc (3 + n) + p
+  ≡⟨⟩
+    suc ((3 + n) + p)
+  ≡⟨ cong suc (+-assoc-3 n p) ⟩
+    suc (3 + (n + p))
+  ≡⟨⟩
+    suc 3 + (n + p)
+  ≡⟨⟩
+    4 + (n + p)
+  ∎
 ```
 
 ## Associativity with rewrite
@@ -874,7 +909,17 @@ just apply the previous results which show addition
 is associative and commutative.
 
 ```agda
--- Your code goes here
++-swap : ∀ (m n p : ℕ) → m + (n + p) ≡ n + (m + p)
++-swap m n p = 
+  begin
+    m + (n + p)
+  ≡⟨ sym (+-assoc m n p) ⟩
+     (m + n) + p
+  ≡⟨ cong (_+ p) (+-comm m n) ⟩
+     (n + m) + p
+  ≡⟨ +-assoc n m p ⟩
+    n + (m + p)
+  ∎
 ```
 
 
@@ -887,7 +932,22 @@ Show multiplication distributes over addition, that is,
 for all naturals `m`, `n`, and `p`.
 
 ```agda
--- Your code goes here
+*-distrib-+ : ∀ (m n p : ℕ) → (m + n) * p ≡ m * p + n * p
+*-distrib-+ zero n p = refl
+*-distrib-+ (suc m) n p = 
+  begin
+    (suc m + n) * p
+  ≡⟨⟩
+    (suc (m + n)) * p
+  ≡⟨⟩
+    p + (m + n) * p
+  ≡⟨ cong (p +_) (*-distrib-+ m n p)⟩
+    p + (m * p + n * p)
+  ≡⟨ sym (+-assoc p (m * p) (n * p)) ⟩
+    (p + m * p) + n * p
+  ≡⟨⟩
+    ((suc m) * p) + n * p
+  ∎
 ```
 
 
@@ -900,7 +960,20 @@ Show multiplication is associative, that is,
 for all naturals `m`, `n`, and `p`.
 
 ```agda
--- Your code goes here
+*-assoc : ∀ (m n p : ℕ) → (m * n) * p ≡ m * (n * p)
+*-assoc zero n p = refl
+*-assoc (suc m) n p = 
+  begin
+    ((suc m) * n) * p
+  ≡⟨⟩
+    (n + m * n) * p
+  ≡⟨ *-distrib-+ n (m * n) p ⟩
+    n * p + (m * n) * p
+  ≡⟨ cong (n * p +_) (*-assoc m n p)⟩
+    (n * p) + m * (n * p)
+  ≡⟨⟩
+    (suc m) * (n * p)
+  ∎
 ```
 
 
@@ -914,7 +987,74 @@ for all naturals `m` and `n`.  As with commutativity of addition,
 you will need to formulate and prove suitable lemmas.
 
 ```agda
--- Your code goes here
+*-rzero : ∀ (n : ℕ) → n * 0 ≡ 0
+*-rzero zero = refl
+*-rzero (suc n) =
+  begin
+    (suc n) * 0
+  ≡⟨⟩
+    0 + n * 0
+  ≡⟨ cong (0 +_) (*-rzero n) ⟩
+    0 + 0
+  ≡⟨⟩
+    0
+  ∎
+
+*-identity : ∀ (n : ℕ) → n * 1 ≡ n
+*-identity zero = refl
+*-identity (suc n) = 
+  begin
+    (suc n) * 1
+  ≡⟨⟩
+    1 + n * 1
+  ≡⟨ cong (1 +_) (*-identity n)⟩
+    1 + n
+  ≡⟨⟩
+    suc n
+  ∎
+
+*-rrec : ∀ (m n : ℕ) → n * (suc m) ≡  n + n * m
+*-rrec m zero = refl
+*-rrec m (suc n) =
+  begin
+    (suc n) * (suc m)
+  ≡⟨⟩
+    (suc m) + n * (suc m)
+  ≡⟨ cong (suc m +_) (*-rrec m n) ⟩
+    (suc m) + (n + n * m)
+  ≡⟨⟩
+    suc (m + (n + n * m))
+  ≡⟨ cong suc (sym (+-assoc m n (n * m))) ⟩
+    suc (m + n + n * m)
+  ≡⟨ cong (λ x → suc (x + n * m)) (+-comm m n) ⟩
+    suc (n + m + n * m)
+  ≡⟨ cong suc (+-assoc n m (n * m)) ⟩
+    suc (n + (m + n * m))
+  ≡⟨⟩
+    suc (n + (suc n) * m)
+  ≡⟨⟩
+    (suc n) + (suc n) * m
+  ∎
+
+*-comm : ∀ (m n : ℕ) → m * n ≡ n * m
+*-comm zero n = 
+  begin
+    0 * n
+  ≡⟨⟩
+    0
+  ≡⟨ sym (*-rzero n) ⟩
+    n * 0
+  ∎
+*-comm (suc m) n = 
+  begin
+    (suc m) * n
+  ≡⟨⟩
+    n + m * n
+  ≡⟨ cong (n +_) (*-comm m n)⟩
+    n + n * m
+  ≡⟨ sym (*-rrec m n) ⟩
+    n * (suc m)
+  ∎
 ```
 
 
@@ -927,7 +1067,9 @@ Show
 for all naturals `n`. Did your proof require induction?
 
 ```agda
--- Your code goes here
+0∸n≡0 : ∀ (n : ℕ) → 0 ∸ n ≡ 0
+0∸n≡0 zero = refl
+0∸n≡0 (suc n) = refl
 ```
 
 
@@ -940,7 +1082,37 @@ Show that monus associates with addition, that is,
 for all naturals `m`, `n`, and `p`.
 
 ```agda
--- Your code goes here
+∸-+-assoc : ∀ (m n p : ℕ) → m ∸ n ∸ p ≡ m ∸ (n + p)
+∸-+-assoc m zero p =
+  begin
+    (m ∸ 0) ∸ p
+  ≡⟨⟩
+    m ∸ p
+  ≡⟨⟩
+    m ∸ (0 + p)
+  ∎
+∸-+-assoc zero n p = 
+  begin
+    0 ∸ n ∸ p
+  ≡⟨ cong (_∸ p) (0∸n≡0 n)⟩
+    0 ∸ p
+  ≡⟨ 0∸n≡0 p ⟩
+    0
+  ≡⟨ sym (0∸n≡0 (n + p)) ⟩
+    0 ∸ (n + p)
+  ∎
+∸-+-assoc (suc m) (suc n) p =
+  begin
+    (suc m) ∸ (suc n) ∸ p
+  ≡⟨⟩
+    m ∸ n ∸ p
+  ≡⟨ ∸-+-assoc m n p ⟩
+    m ∸ (n + p)
+  ≡⟨⟩
+    (suc m) ∸ (suc (n + p))
+  ≡⟨⟩
+    (suc m) ∸ ((suc n) + p)
+  ∎
 ```
 
 
@@ -955,7 +1127,84 @@ Show the following three laws
 for all `m`, `n`, and `p`.
 
 ```
--- Your code goes here
+^-distribˡ-+-* : ∀ (m n p : ℕ) → m ^ (n + p) ≡ (m ^ n) * (m ^ p)
+^-distribˡ-+-* m zero p =
+  begin
+    m ^ (0 + p)
+  ≡⟨⟩
+    m ^ p
+  ≡⟨ sym (+-identityʳ (m ^ p)) ⟩
+    m ^ p + 0
+  ≡⟨⟩
+    1 * (m ^ p)
+  ≡⟨⟩
+    (m ^ 0) * (m ^ p)
+  ∎
+^-distribˡ-+-* m (suc n) p = 
+  begin
+    m ^ ((suc n) + p)
+  ≡⟨⟩
+    m ^ (suc (n + p))
+  ≡⟨⟩
+    m * m ^ (n + p)
+  ≡⟨ cong (m *_) (^-distribˡ-+-* m n p) ⟩
+    m * (m ^ n * m ^ p)
+  ≡⟨ sym (*-assoc m (m ^ n) (m ^ p)) ⟩
+    (m * m ^ n) * m ^ p
+  ≡⟨⟩
+    (m ^ (suc n)) * (m ^ p)
+  ∎
+
+^-distribʳ-* : ∀ (m n p : ℕ) → (m * n) ^ p ≡ (m ^ p) * (n ^ p)
+^-distribʳ-* m n zero =
+  begin
+    (m * n) ^ zero
+  ≡⟨⟩
+    1
+  ≡⟨⟩
+    1 * 1
+  ≡⟨⟩
+    (m ^ zero) * (n ^ zero)
+  ∎
+^-distribʳ-* m n (suc p) =
+  begin
+    (m * n) ^ (suc p)
+  ≡⟨⟩
+    (m * n) * ((m * n) ^ p)
+  ≡⟨ cong (m * n *_) (^-distribʳ-* m n p) ⟩
+    (m * n) * ((m ^ p) * (n ^ p))
+  ≡⟨⟩
+    (m * n) * ((m ^ p) * (n ^ p))
+  ≡⟨ cong (_* ((m ^ p) * (n ^ p))) (*-comm m n) ⟩
+    (n * m) * ((m ^ p) * (n ^ p))
+  ≡⟨ sym (*-assoc (n * m) (m ^ p) (n ^ p)) ⟩
+    ((n * m) * (m ^ p)) * (n ^ p)
+  ≡⟨ cong (_* (n ^ p)) (*-assoc n m (m ^ p)) ⟩
+    n * (m * (m ^ p)) * (n ^ p)
+  ≡⟨⟩
+    n * (m ^ suc p) * (n ^ p)
+  ≡⟨ cong (_* (n ^ p)) (*-comm n (m ^ suc p)) ⟩
+    (m ^ suc p) * n * (n ^ p)
+  ≡⟨ *-assoc (m ^ suc p) n (n ^ p) ⟩
+    (m ^ suc p) * (n * (n ^ p))
+  ≡⟨⟩
+    (m ^ (suc p)) * (n ^ (suc p))
+  ∎
+
+^-*-assoc : ∀ (m n p : ℕ) → (m ^ n) ^ p ≡ m ^ (n * p)
+^-*-assoc m n zero = cong (m ^_) (sym (*-rzero n))
+^-*-assoc m n (suc p) =
+  begin
+    (m ^ n) ^ (suc p)
+  ≡⟨⟩
+    (m ^ n) * (m ^ n) ^ p
+  ≡⟨ cong ((m ^ n) *_) (^-*-assoc m n p) ⟩
+    (m ^ n) * (m ^ (n * p))
+  ≡⟨ sym (^-distribˡ-+-* m n (n * p)) ⟩
+    m ^ (n + (n * p))
+  ≡⟨ cong (m ^_) (sym (*-rrec p n)) ⟩
+    m ^ (n * (suc p))
+  ∎
 ```
 
 
@@ -974,13 +1223,64 @@ Consider the following laws, where `n` ranges over naturals and `b`
 over bitstrings:
 
     from (inc b) ≡ suc (from b)
-    to (from b) ≡ b
+    to (from b) ≡ b  -> !leading zeros!
     from (to n) ≡ n
 
 For each law: if it holds, prove; if not, give a counterexample.
 
 ```agda
--- Your code goes here
+data Bin : Set where
+  ⟨⟩ : Bin
+  _O : Bin → Bin
+  _I : Bin → Bin
+
+inc  : Bin → Bin
+to   : ℕ   → Bin
+from : Bin → ℕ
+
+inc ⟨⟩ = ⟨⟩ I
+inc (b O) = b I
+inc (b I) = (inc b) O
+
+to 0 = ⟨⟩
+to (suc n) = inc (to n)
+
+from ⟨⟩ = 0
+from (b O) = 2 * from b
+from (b I) = 1 + 2 * from b
+
+from-inc≡suc-from : ∀ (b : Bin) → from (inc b) ≡ suc (from b)
+from-inc≡suc-from ⟨⟩ = refl
+from-inc≡suc-from (b O) = refl
+from-inc≡suc-from (b I) =
+  begin
+    from (inc (b I))
+  ≡⟨⟩
+    from ((inc b) O)
+  ≡⟨⟩
+    2 * (from (inc b))
+  ≡⟨ cong (2 *_) (from-inc≡suc-from b) ⟩
+    2 * (suc (from b))
+  ≡⟨ *-rrec (from b) 2 ⟩
+    2 + 2 * from b
+  ≡⟨⟩
+    suc (1 + 2 * from b)
+  ≡⟨⟩
+    suc (from (b I))
+  ∎
+
+from-to≡idℕ : ∀ (n : ℕ) → from (to n) ≡ n
+from-to≡idℕ zero = refl
+from-to≡idℕ (suc n) = 
+  begin
+    from (to (suc n))
+  ≡⟨⟩
+    from (inc (to n))
+  ≡⟨ from-inc≡suc-from (to n) ⟩
+    suc (from (to n))
+  ≡⟨ cong suc (from-to≡idℕ n) ⟩
+    suc n
+  ∎
 ```
 
 
