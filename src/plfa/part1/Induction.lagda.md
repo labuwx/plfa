@@ -1242,7 +1242,7 @@ inc ⟨⟩ = ⟨⟩ I
 inc (b O) = b I
 inc (b I) = (inc b) O
 
-to 0 = ⟨⟩
+to 0 = ⟨⟩ O
 to (suc n) = inc (to n)
 
 from ⟨⟩ = 0
