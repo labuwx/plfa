@@ -437,15 +437,20 @@ open ≲-Reasoning
 
 Show that every isomorphism implies an embedding.
 ```agda
-postulate
-  ≃-implies-≲ : ∀ {A B : Set}
-    → A ≃ B
-      -----
-    → A ≲ B
+--postulate
+≃-implies-≲ : ∀ {A B : Set}
+  → A ≃ B
+    -----
+  → A ≲ B
 ```
 
 ```agda
--- Your code goes here
+≃-implies-≲ {A} {B} A≃B =
+  record
+    { to      = to A≃B
+    ; from    = from A≃B
+    ; from∘to = from∘to A≃B
+    }
 ```
 
 #### Exercise `_⇔_` (practice) {#iff}
@@ -460,7 +465,29 @@ record _⇔_ (A B : Set) : Set where
 Show that equivalence is reflexive, symmetric, and transitive.
 
 ```agda
--- Your code goes here
+infix 0 _⇔_
+open _⇔_
+
+⇔-refl : ∀ (A : Set) → A ⇔ A
+⇔-refl A =
+  record
+    { to      = λ a → a
+    ; from    = λ a → a
+    }
+
+⇔-sym : ∀ {A B : Set} → A ⇔ B → B ⇔ A
+⇔-sym A⇔B =
+  record
+    { to      = from A⇔B
+    ; from    = to A⇔B
+    }
+
+⇔-trans : ∀ {A B C : Set} → A ⇔ B → B ⇔ C → A ⇔ C
+⇔-trans A⇔B B⇔C =
+  record
+    { to      = (to B⇔C) ∘ (to A⇔B)
+    ; from    = (from A⇔B) ∘ (from B⇔C)
+    }
 ```
 
 #### Exercise `Bin-embedding` (stretch) {#Bin-embedding}
@@ -480,7 +507,69 @@ which satisfy the following property:
 
 Using the above, establish that there is an embedding of `ℕ` into `Bin`.
 ```agda
--- Your code goes here
+open import Data.Nat using (_*_)
+open import Data.Nat.Properties using (*-suc)
+
+data Bin : Set where
+  ⟨⟩ : Bin
+  _O : Bin → Bin
+  _I : Bin → Bin
+
+inc  : Bin → Bin
+bin-to   : ℕ   → Bin
+bin-from : Bin → ℕ
+
+inc ⟨⟩ = ⟨⟩ I
+inc (b O) = b I
+inc (b I) = (inc b) O
+
+bin-to 0 = ⟨⟩ O
+bin-to (suc n) = inc (bin-to n)
+
+bin-from ⟨⟩ = 0
+bin-from (b O) = 2 * bin-from b
+bin-from (b I) = 1 + 2 * bin-from b
+
+from-inc≡suc-from : ∀ (b : Bin) → bin-from (inc b) ≡ suc (bin-from b)
+from-inc≡suc-from ⟨⟩ = refl
+from-inc≡suc-from (b O) = refl
+from-inc≡suc-from (b I) =
+  begin
+    bin-from (inc (b I))
+  ≡⟨⟩
+    bin-from ((inc b) O)
+  ≡⟨⟩
+    2 * (bin-from (inc b))
+  ≡⟨ cong (2 *_) (from-inc≡suc-from b) ⟩
+    2 * (suc (bin-from b))
+  ≡⟨ *-suc 2 (bin-from b) ⟩
+    2 + 2 * bin-from b
+  ≡⟨⟩
+    suc (1 + 2 * bin-from b)
+  ≡⟨⟩
+    suc (bin-from (b I))
+  ∎
+
+from-to≡idℕ : ∀ (n : ℕ) → bin-from (bin-to n) ≡ n
+from-to≡idℕ zero = refl
+from-to≡idℕ (suc n) =
+  begin
+    bin-from (bin-to (suc n))
+  ≡⟨⟩
+    bin-from (inc (bin-to n))
+  ≡⟨ from-inc≡suc-from (bin-to n) ⟩
+    suc (bin-from (bin-to n))
+  ≡⟨ cong suc (from-to≡idℕ n) ⟩
+    suc n
+  ∎
+
+ℕ≲Bin : ℕ ≲ Bin
+ℕ≲Bin =
+  record
+    { to      = bin-to
+    ; from    = bin-from
+    ; from∘to = from-to≡idℕ
+    }
 ```
 
 Why do `to` and `from` not form an isomorphism?
