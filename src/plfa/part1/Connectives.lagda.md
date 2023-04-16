@@ -238,7 +238,17 @@ Show that `A ⇔ B` as defined [earlier](/Isomorphism/#iff)
 is isomorphic to `(A → B) × (B → A)`.
 
 ```agda
--- Your code goes here
+open import plfa.part1.Isomorphism using (_⇔_)
+open _⇔_
+
+⇔≃x : ∀ {A B : Set} → (A ⇔ B) ≃ (A → B) × (B → A)
+⇔≃x =
+  record
+    { to = λ A⇔B → ⟨ to A⇔B , from A⇔B ⟩
+    ; from = λ{ ⟨ A→B , B→A ⟩ → record { to = A→B ; from = B→A }}
+    ; from∘to = λ A⇔B → refl
+    ; to∘from = λ{ ⟨ A→B , B→A ⟩ → refl}
+    }
 ```
 
 
@@ -451,7 +461,14 @@ commutative and associative _up to isomorphism_.
 Show sum is commutative up to isomorphism.
 
 ```agda
--- Your code goes here
+⊎-comm : ∀ {A B : Set} → A ⊎ B ≃ B ⊎ A
+⊎-comm =
+  record
+    { to = λ{ (inj₁ a) → inj₂ a ; (inj₂ b) → inj₁ b}
+    ; from = λ{ (inj₁ b) → inj₂ b ; (inj₂ a) → inj₁ a}
+    ; from∘to = λ{ (inj₁ _) → refl ; (inj₂ _) → refl }
+    ; to∘from = λ{ (inj₁ _) → refl ; (inj₂ _) → refl }
+    }
 ```
 
 #### Exercise `⊎-assoc` (practice)
@@ -459,7 +476,14 @@ Show sum is commutative up to isomorphism.
 Show sum is associative up to isomorphism.
 
 ```agda
--- Your code goes here
+⊎-assoc : ∀ {A B C : Set} → (A ⊎ B) ⊎ C ≃ A ⊎ (B ⊎ C)
+⊎-assoc =
+  record
+    { to = λ{ (inj₁ (inj₁ a)) → inj₁ a ; (inj₁ (inj₂ b)) → inj₂ (inj₁ b) ; (inj₂ c) → inj₂ (inj₂ c) }
+    ; from = λ{ (inj₁ a) → inj₁ (inj₁ a) ; (inj₂ (inj₁ b)) → inj₁ (inj₂ b) ; (inj₂ (inj₂ c)) → inj₂ c }
+    ; from∘to = λ{ (inj₁ (inj₁ _)) → refl ; (inj₁ (inj₂ _)) → refl ; (inj₂ _) → refl}
+    ; to∘from = λ{ (inj₁ _) → refl ; (inj₂ (inj₁ _)) → refl ; (inj₂ (inj₂ _)) → refl }
+    }
 ```
 
 ## False is empty
@@ -522,7 +546,14 @@ is the identity of sums _up to isomorphism_.
 Show empty is the left identity of sums up to isomorphism.
 
 ```agda
--- Your code goes here
+⊥-identityˡ : ∀ {A : Set} → ⊥ ⊎ A ≃ A
+⊥-identityˡ =
+  record
+    { to = λ{ (inj₂ a) → a }
+    ; from = inj₂
+    ; from∘to = λ{ (inj₂ _) → refl }
+    ; to∘from = λ _ → refl
+    }
 ```
 
 #### Exercise `⊥-identityʳ` (practice)
@@ -530,7 +561,15 @@ Show empty is the left identity of sums up to isomorphism.
 Show empty is the right identity of sums up to isomorphism.
 
 ```agda
--- Your code goes here
+⊥-identityʳ : ∀ {A : Set} → A ⊎ ⊥ ≃ A
+⊥-identityʳ {A} =
+  ≃-begin
+    (A ⊎ ⊥)
+  ≃⟨ ⊎-comm ⟩
+    (⊥ ⊎ A)
+  ≃⟨ ⊥-identityˡ ⟩
+    A
+  ≃-∎
 ```
 
 ## Implication is function {#implication}
@@ -754,14 +793,15 @@ one of these laws is "more true" than the other.
 
 Show that the following property holds:
 ```agda
-postulate
-  ⊎-weak-× : ∀ {A B C : Set} → (A ⊎ B) × C → A ⊎ (B × C)
+--postulate
+⊎-weak-× : ∀ {A B C : Set} → (A ⊎ B) × C → A ⊎ (B × C)
 ```
 This is called a _weak distributive law_. Give the corresponding
 distributive law, and explain how it relates to the weak version.
 
 ```agda
--- Your code goes here
+⊎-weak-× ⟨ inj₁ a , c ⟩ = inj₁ a
+⊎-weak-× ⟨ inj₂ b , c ⟩ = inj₂ ⟨ b , c ⟩
 ```
 
 
@@ -769,13 +809,14 @@ distributive law, and explain how it relates to the weak version.
 
 Show that a disjunct of conjuncts implies a conjunct of disjuncts:
 ```agda
-postulate
-  ⊎×-implies-×⊎ : ∀ {A B C D : Set} → (A × B) ⊎ (C × D) → (A ⊎ C) × (B ⊎ D)
+--postulate
+⊎×-implies-×⊎ : ∀ {A B C D : Set} → (A × B) ⊎ (C × D) → (A ⊎ C) × (B ⊎ D)
 ```
 Does the converse hold? If so, prove; if not, give a counterexample.
 
 ```agda
--- Your code goes here
+⊎×-implies-×⊎ (inj₁ ⟨ a , b ⟩) = ⟨ inj₁ a , inj₁ b ⟩
+⊎×-implies-×⊎ (inj₂ ⟨ c , d ⟩) = ⟨ inj₂ c , inj₂ d ⟩
 ```
 
 
