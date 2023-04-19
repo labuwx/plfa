@@ -243,13 +243,45 @@ partial order but not a total order.
 Give an example of a preorder that is not a partial order.
 
 ```agda
--- Your code goes here
+data _po₁_ : ℕ → ℕ → Set where
+  0≤n : {n : ℕ} → 0 po₁ n
+  1≤n : {n : ℕ} → 1 po₁ n
+  n=n : {n : ℕ} → n po₁ n
+
+-- reflexive
+po₁-refl : ∀ {n : ℕ} → n po₁ n
+po₁-refl = n=n
+
+-- transitive
+po₁-trans : ∀ {m n p : ℕ} → m po₁ n → n po₁ p → m po₁ p
+po₁-trans 0≤n _ = 0≤n
+po₁-trans 1≤n _ = 1≤n
+po₁-trans n=n 0≤n = 0≤n
+po₁-trans n=n 1≤n = 1≤n 
+po₁-trans n=n n=n = n=n
+
+-- 0 po₁ 1 and 1 po₁ 0 but 0 ≠ 1 ⇒ not anti-symmetric
 ```
 
 Give an example of a partial order that is not a total order.
 
 ```agda
--- Your code goes here
+data _po₂_ : ℕ → ℕ → Set where
+  n=n : {n : ℕ} → n po₂ n
+
+-- reflexive
+po₂-refl : ∀ {n : ℕ} → n po₂ n
+po₂-refl = n=n
+
+-- transitive
+po₂-trans : ∀ {m n p : ℕ} → m po₂ n → n po₂ p → m po₂ p
+po₂-trans n=n n=n = n=n
+
+-- anti-symmetric
+po₂-antisymm : ∀ {m n : ℕ} → m po₂ n → n po₂ m → m ≡ n
+po₂-antisymm n=n n=n = refl
+
+-- not total
 ```
 
 ## Reflexivity
@@ -362,7 +394,7 @@ The above proof omits cases where one argument is `z≤n` and one
 argument is `s≤s`.  Why is it ok to omit them?
 
 ```agda
--- Your code goes here
+-- ≤-antisym z≤n (s≤s n≤m) ⇒ 0 = suc n ↯
 ```
 
 
@@ -552,7 +584,23 @@ transitivity proves `m + p ≤ n + q`, as was to be shown.
 Show that multiplication is monotonic with regard to inequality.
 
 ```agda
--- Your code goes here
+open import Data.Nat using (_*_)
+open import Data.Nat.Properties using (*-comm)
+open Eq using (subst)
+
+*-monoʳ-≤ : ∀ (n p q : ℕ) → p ≤ q → n * p ≤ n * q
+*-monoʳ-≤ zero p q p≤q = z≤n
+*-monoʳ-≤ (suc n) p q p≤q = +-mono-≤ p q (n * p) (n * q) p≤q (*-monoʳ-≤ n p q p≤q)
+
+*-monoˡ-≤ : ∀ (m n p : ℕ) → m ≤ n → m * p ≤ n * p
+*-monoˡ-≤ m n p m≤n = subst (_≤ n * p)
+                            (*-comm p m)
+                            (subst (p * m ≤_)
+                                   (*-comm p n)
+                                   (*-monoʳ-≤ p m n m≤n))
+
+*-mono-≤ : ∀ (m n p q : ℕ) → m ≤ n → p ≤ q → m * p ≤ n * q
+*-mono-≤ m n p q m≤n p≤q = ≤-trans (*-monoˡ-≤ m n p m≤n) (*-monoʳ-≤ n p q p≤q)
 ```
 
 
@@ -600,7 +648,9 @@ Show that strict inequality is transitive. Use a direct proof. (A later
 exercise exploits the relation between < and ≤.)
 
 ```agda
--- Your code goes here
+<-trans : ∀ {m n p : ℕ} → m < n → n < p → m < p
+<-trans z<s (s<s _) = z<s
+<-trans (s<s m<n) (s<s n<p) = s<s (<-trans m<n n<p)
 ```
 
 #### Exercise `trichotomy` (practice) {#trichotomy}
@@ -618,7 +668,19 @@ similar to that used for totality.
 [negation](/Negation/).)
 
 ```agda
--- Your code goes here
+data Trichotomy (m n : ℕ) : Set where
+  tri_fw : m < n → Trichotomy m n
+  tri_bw : n < m → Trichotomy m n
+  tri_eq : m ≡ n → Trichotomy m n
+
+<-trichotomy : ∀ (m n : ℕ) → Trichotomy m n
+<-trichotomy zero zero = tri_eq refl
+<-trichotomy zero (suc n) = tri_fw z<s
+<-trichotomy (suc m) zero = tri_bw z<s
+<-trichotomy (suc m) (suc n) with (<-trichotomy m n)
+...                            | tri_fw m<n = tri_fw (s<s m<n)
+...                            | tri_bw m>n = tri_bw (s<s m>n)
+...                            | tri_eq m≡n = tri_eq (cong suc m≡n)
 ```
 
 #### Exercise `+-mono-<` (practice) {#plus-mono-less}
@@ -627,7 +689,19 @@ Show that addition is monotonic with respect to strict inequality.
 As with inequality, some additional definitions may be required.
 
 ```agda
--- Your code goes here
++-monoʳ-< : ∀ (n p q : ℕ) → p < q → n + p < n + q
++-monoʳ-< zero p q p<q = p<q
++-monoʳ-< (suc n) p q p<q = s<s (+-monoʳ-< n p q p<q)
+
++-monoˡ-< : ∀ (m n p : ℕ) → m < n → m + p < n + p
++-monoˡ-< m n p m<n = subst (_< n + p)
+                            (+-comm p m)
+                            (subst (p + m <_)
+                                   (+-comm p n)
+                                   (+-monoʳ-< p m n m<n))
+
++-mono-< : ∀ (m n p q : ℕ) → m < n → p < q → m + p < n + q
++-mono-< m n p q m<n p<q = <-trans (+-monoˡ-< m n p m<n) (+-monoʳ-< n p q p<q)
 ```
 
 #### Exercise `≤-iff-<` (recommended) {#leq-iff-less}
@@ -635,7 +709,16 @@ As with inequality, some additional definitions may be required.
 Show that `suc m ≤ n` implies `m < n`, and conversely.
 
 ```agda
--- Your code goes here
+inv-s<s : ∀ {m n : ℕ} → suc m < suc n → m < n
+inv-s<s (s<s m<n) = m<n
+
+≤-⇒-< : ∀ {m n : ℕ} → suc m ≤ n → m < n
+≤-⇒-< {zero} {suc _} _ = z<s
+≤-⇒-< {suc _} {suc _} ssm≤sn = s<s (≤-⇒-< (inv-s≤s ssm≤sn))
+
+<-⇒-≤ : ∀ {m n : ℕ} → m < n → suc m ≤ n
+<-⇒-≤ z<s = s≤s z≤n
+<-⇒-≤ (s<s m<n) = s≤s (<-⇒-≤ m<n)
 ```
 
 #### Exercise `<-trans-revisited` (practice) {#less-trans-revisited}
@@ -645,7 +728,15 @@ using the relation between strict inequality and inequality and
 the fact that inequality is transitive.
 
 ```agda
--- Your code goes here
+--     m < n      and      n < p  (< ⇒ ≤)
+-- suc m ≤ n      and  suc n ≤ p  (+ monotone wr. ≤)
+-- suc m ≤ suc n  and  suc n ≤ p  (≤ transitive)
+-- suc m ≤ p  (≤ ⇒ <)
+-- m < p
+<-trans-revisited : ∀ {m n p : ℕ} → m < n → n < p → m < p
+<-trans-revisited {m} {n} {_} m<n n<p =
+  ≤-⇒-< (≤-trans (+-mono-≤ 0 1 (suc m) n z≤n (<-⇒-≤ m<n))
+                 (<-⇒-≤ n<p))
 ```
 
 
@@ -752,7 +843,8 @@ successor of the sum of two even numbers, which is even.
 Show that the sum of two odd numbers is even.
 
 ```agda
--- Your code goes here
+o+o≡e : ∀ {m n : ℕ} → odd m → odd n → even (m + n)
+o+o≡e {suc m} {n} (suc em) on = suc (subst odd (+-comm n m) (o+e≡o on em))
 ```
 
 #### Exercise `Bin-predicates` (stretch) {#Bin-predicates}
@@ -805,7 +897,103 @@ properties of `One`. Also, you may need to prove that
 if `One b` then `1` is less or equal to the result of `from b`.)
 
 ```agda
--- Your code goes here
+open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
+
+data Bin : Set where
+  ⟨⟩ : Bin
+  _O : Bin → Bin
+  _I : Bin → Bin
+
+inc  : Bin → Bin
+to   : ℕ   → Bin
+from : Bin → ℕ
+
+inc ⟨⟩ = ⟨⟩ I
+inc (b O) = b I
+inc (b I) = (inc b) O
+
+to 0 = ⟨⟩ O
+to (suc n) = inc (to n)
+
+from ⟨⟩ = 0
+from (b O) = 2 * from b
+from (b I) = 1 + 2 * from b
+
+data One : Bin → Set where
+  justI : One (⟨⟩ I)
+  appendO : {b : Bin} → One b → One (b O)
+  appendI : {b : Bin} → One b → One (b I)
+
+data Can : Bin → Set where
+  justO : Can (⟨⟩ O)
+  one-to-can : {b : Bin} → One b → Can b
+
+canbin : {b : Bin} → Can b → Bin
+canbin {b} _ = b
+
+one⇒one-inc : ∀ {b : Bin} → One b → One (inc b)
+one⇒one-inc justI = appendO justI
+one⇒one-inc (appendO oneb) = appendI oneb
+one⇒one-inc (appendI oneb) = appendO (one⇒one-inc oneb)
+
+can⇒can-inc : ∀ {b : Bin} → Can b → Can (inc b)
+can⇒can-inc justO = one-to-can justI
+can⇒can-inc (one-to-can oneb) = one-to-can (one⇒one-inc oneb)
+
+can-to-n : ∀ (n : ℕ) → Can (to n)
+can-to-n zero = justO
+can-to-n (suc n) = can⇒can-inc (can-to-n n)
+
+-- TODOTODO in this block
+inc-inc=appendO : ∀ (b : Bin) →  inc (inc b) ≡ b O
+inc-inc=appendO _ = {!!}
+
+
+double=appendO : ∀ {n : ℕ} → 1 ≤ n → to (2 * n) ≡ (to n) O
+double=appendO {1} _ = refl
+double=appendO {suc n} _ =
+  begin
+    to (2 * (suc n))
+  ≡⟨ cong to (*-comm 2 (suc n)) ⟩
+    to ((suc n) * 2)
+  ≡⟨⟩
+    to (2 + n * 2)
+  ≡⟨ cong (λ x → to (2 + x)) (*-comm n 2) ⟩
+    to (2 + 2 * n)
+  ≡⟨⟩
+    inc (inc (to (2 * n)))
+
+  ≡⟨ {!!} ⟩
+    (to (suc n)) O
+  ∎
+
+one-from-to=id : ∀ {b : Bin} → One b → to (from b) ≡ b
+one-from-to=id {_} justI = refl
+one-from-to=id {b O} (appendO oneb) =
+  begin
+    to (from (b O))
+  ≡⟨⟩
+    to (2 * from b)
+  ≡⟨ {!!} ⟩
+    (to (from b)) O
+  ≡⟨ cong _O (one-from-to=id oneb) ⟩
+    b O
+  ∎
+one-from-to=id {b I} (appendI oneb) =
+  begin
+    to (from (b I))
+  ≡⟨⟩
+    to (1 + 2 * from b)
+  ≡⟨⟩
+    inc (to (2 * from b))
+  ≡⟨ {!!} ⟩
+    (to (from b)) I
+  ≡⟨ cong _I (one-from-to=id oneb) ⟩
+    b I
+  ∎
+
+can-from-to-id : ∀ (b : Bin) → Can b → to (from b) ≡ b
+can-from-to-id b canb = {!!}
 ```
 
 ## Standard library
