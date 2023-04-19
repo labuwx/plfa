@@ -811,12 +811,15 @@ Show that a disjunct of conjuncts implies a conjunct of disjuncts:
 ```agda
 --postulate
 ⊎×-implies-×⊎ : ∀ {A B C D : Set} → (A × B) ⊎ (C × D) → (A ⊎ C) × (B ⊎ D)
-```
-Does the converse hold? If so, prove; if not, give a counterexample.
-
-```agda
 ⊎×-implies-×⊎ (inj₁ ⟨ a , b ⟩) = ⟨ inj₁ a , inj₁ b ⟩
 ⊎×-implies-×⊎ (inj₂ ⟨ c , d ⟩) = ⟨ inj₂ c , inj₂ d ⟩
+```
+Does the converse hold? If so, prove; if not, give a counterexample.
+```agda
+-- (A ⊎ C) × (B ⊎ D) → (A × B) ⊎ (C × D)
+-- A × D → (A × B) ⊎ (C × D)
+--     A × D → (A × B) or
+--     A × D → (C × D) ↯
 ```
 
 
