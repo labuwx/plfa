@@ -190,7 +190,13 @@ Using negation, show that
 is irreflexive, that is, `n < n` holds for no `n`.
 
 ```agda
--- Your code goes here
+infix 4 _<_
+data _<_ : ℕ → ℕ → Set where
+  z<s : ∀ {n : ℕ} → zero < suc n
+  s<s : ∀ {m n : ℕ} → m < n → suc m < suc n
+
+<-irreflexive : ∀ {n : ℕ} → ¬ (n < n)
+<-irreflexive (s<s n<n) = <-irreflexive n<n
 ```
 
 
@@ -208,7 +214,33 @@ Here "exactly one" means that not only one of the three must hold,
 but that when one holds the negation of the other two must also hold.
 
 ```agda
--- Your code goes here
+open import Data.Nat using (pred)
+open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Function using (_∘_)
+open import Relation.Binary.PropositionalEquality using (cong; sym)
+
+_≮_ : ℕ → ℕ → Set
+m ≮ n = ¬ (m < n)
+
+zero≮zero : zero ≮ zero
+zero≮zero ()
+
+suc≮zero : ∀ {n : ℕ} → (suc n) ≮ zero
+suc≮zero ()
+
+inv-s<s : ∀ {m n : ℕ} → (suc m) < (suc n) → m < n
+inv-s<s (s<s m<n) = m<n
+
+<-trichotomy : ∀ (m n : ℕ) → ((m ≡ n) × ((m ≮ n) × (n ≮ m))) ⊎
+                             ((m < n) × ((m ≢ n) × (n ≮ m))) ⊎
+                             ((n < m) × ((m ≢ n) × (m ≮ n)))
+<-trichotomy zero zero = inj₁ ⟨ refl , ⟨ zero≮zero , zero≮zero ⟩ ⟩
+<-trichotomy zero (suc n) = inj₂ (inj₁ ⟨ z<s , ⟨ peano , suc≮zero ⟩ ⟩)
+<-trichotomy (suc m) zero = inj₂ (inj₂ ⟨ z<s , ⟨ peano ∘ sym  , suc≮zero ⟩ ⟩)
+<-trichotomy (suc m) (suc n) with <-trichotomy m n
+... | inj₁       ⟨ m≡n , ⟨ m≮n , n≮m ⟩ ⟩  = inj₁       ⟨ (cong suc m≡n) , ⟨ m≮n ∘ inv-s<s     , n≮m ∘ inv-s<s ⟩ ⟩
+... | inj₂ (inj₁ ⟨ m<n , ⟨ m≢n , n≮m ⟩ ⟩) = inj₂ (inj₁ ⟨ (s<s m<n)      , ⟨ m≢n ∘ (cong pred) , n≮m ∘ inv-s<s ⟩ ⟩)
+... | inj₂ (inj₂ ⟨ n<m , ⟨ m≢n , m≮n ⟩ ⟩) = inj₂ (inj₂ ⟨ (s<s n<m)      , ⟨ m≢n ∘ (cong pred) , m≮n ∘ inv-s<s ⟩ ⟩)
 ```
 
 #### Exercise `⊎-dual-×` (recommended)
@@ -221,7 +253,20 @@ version of De Morgan's Law.
 This result is an easy consequence of something we've proved previously.
 
 ```agda
--- Your code goes here
+open import Data.Sum renaming ([_,_] to case-⊎)
+
+-- from: Part 1 / Connectives
+→-distrib-⊎ : ∀ {A B C : Set} → (A ⊎ B → C) ≃ ((A → C) × (B → C))
+→-distrib-⊎ =
+  record
+    { to = λ A⊎B→C → ⟨ A⊎B→C ∘ inj₁ , A⊎B→C ∘ inj₂ ⟩
+    ; from = λ{ ⟨ A→C , B→C ⟩ → case-⊎ A→C B→C }
+    ; from∘to = λ A⊎B→C → extensionality λ{ (inj₁ a) → refl ; (inj₂ b) → refl }
+    ; to∘from = λ A→C×B→C → refl
+    }
+
+⊎-dual-× : ∀ {A B : Set} → ¬ (A ⊎ B) ≃ (¬ A) × (¬ B)
+⊎-dual-× = →-distrib-⊎ {_} {_} {⊥}
 ```
 
 
@@ -231,6 +276,13 @@ Do we also have the following?
 
 If so, prove; if not, can you give a relation weaker than
 isomorphism that relates the two sides?
+
+```agda
+×-implies-⊎ : ∀ {A B : Set} → (¬ A) ⊎ (¬ B) → ¬ (A × B)
+×-implies-⊎ = case-⊎ (λ ¬A → ¬A ∘ proj₁) (λ ¬B → ¬B ∘ proj₂)
+
+-- other direction: ¬(A×B) needs both an A and a B but only one is given at a time
+```
 
 
 ## Intuitive and Classical logic
@@ -378,7 +430,16 @@ Consider the following principles:
 Show that each of these implies all the others.
 
 ```agda
--- Your code goes here
+-- TODOTODO
+-- em → dne
+dne : ∀ {A : Set} → (¬ ¬ A → A)
+dne {A} ¬¬A with em {A}
+... | (inj₁ a)  = a
+... | (inj₂ ¬A) = ⊥-elim (¬¬A ¬A)
+
+-- dne → pierce
+pierce : ∀ {A B : Set} → ((A → B) → A) → A
+pierce {A} {B} [A→B]→A = [A→B]→A {!      !}
 ```
 
 
@@ -393,7 +454,11 @@ Show that any negated formula is stable, and that the conjunction
 of two stable formulas is stable.
 
 ```agda
--- Your code goes here
+neg-stable : ∀ {A : Set} → Stable (¬ A)
+neg-stable = ¬¬¬-elim
+
+neg-stable' : ∀ {A : Set} → Stable (¬ A)
+neg-stable' ¬¬¬A = λ a → ¬¬¬A (λ ¬A → ¬A a)
 ```
 
 ## Standard Prelude
