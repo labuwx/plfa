@@ -90,9 +90,16 @@ dependent product is ambiguous.
 
 Show that universals distribute over conjunction:
 ```agda
-postulate
-  ∀-distrib-× : ∀ {A : Set} {B C : A → Set} →
-    (∀ (x : A) → B x × C x) ≃ (∀ (x : A) → B x) × (∀ (x : A) → C x)
+--postulate
+∀-distrib-× : ∀ {A : Set} {B C : A → Set} →
+  (∀ (x : A) → B x × C x) ≃ (∀ (x : A) → B x) × (∀ (x : A) → C x)
+∀-distrib-× =
+  record
+    { to = λ f → ⟨ (λ x → proj₁ (f x)) , (λ x → proj₂ (f x)) ⟩
+    ; from = λ{ (⟨ f₁ , f₂ ⟩) →  λ x → ⟨ f₁ x , f₂ x ⟩ }
+    ; from∘to = λ f → refl
+    ; to∘from = λ f → refl
+    }
 ```
 Compare this with the result (`→-distrib-×`) in
 Chapter [Connectives](/Connectives/).
@@ -101,11 +108,20 @@ Chapter [Connectives](/Connectives/).
 
 Show that a disjunction of universals implies a universal of disjunctions:
 ```agda
-postulate
-  ⊎∀-implies-∀⊎ : ∀ {A : Set} {B C : A → Set} →
-    (∀ (x : A) → B x) ⊎ (∀ (x : A) → C x) → ∀ (x : A) → B x ⊎ C x
+--postulate
+⊎∀-implies-∀⊎ : ∀ {A : Set} {B C : A → Set} →
+  (∀ (x : A) → B x) ⊎ (∀ (x : A) → C x) → ∀ (x : A) → B x ⊎ C x
+⊎∀-implies-∀⊎ = λ{
+  (inj₁ f₁) → λ x → inj₁ (f₁ x) ;
+  (inj₂ f₂) → λ x → inj₂ (f₂ x)}
 ```
 Does the converse hold? If so, prove; if not, explain why.
+```agda
+ -- ff : ∀ (n : ℕ) → Even n ⊎ Odd n
+ -- ∀⊎-implies-⊎∀ ff : (∀ (n : ℕ) → Even n) ⊎ (∀ (n : ℕ) → Odd n)
+ --     ∀ (n : ℕ) → Even n or
+ --     ∀ (n : ℕ) → Odd n  ↯
+```
 
 
 #### Exercise `∀-×` (practice)
@@ -121,6 +137,19 @@ Let `B` be a type indexed by `Tri`, that is `B : Tri → Set`.
 Show that `∀ (x : Tri) → B x` is isomorphic to `B aa × B bb × B cc`.
 Hint: you will need to postulate a version of extensionality that
 works for dependent functions.
+```agda
+postulate
+  ∀-extensionality : ∀ {A : Set} {B : A → Set} {f g : (x : A) → B x} → (∀ (x : A) → f x ≡ g x) → f ≡ g
+
+∀-× : ∀ {B : Tri → Set} → (∀ (x : Tri) → B x) ≃ (B aa × B bb × B cc)
+∀-× =
+  record
+    { to = λ f → ⟨ f aa , ⟨ f bb ,  f cc ⟩ ⟩
+    ; from = λ{⟨ vaa , ⟨ vbb , vcc ⟩ ⟩ → λ{ aa → vaa ; bb → vbb ; cc → vcc }}
+    ; from∘to = λ f → ∀-extensionality (λ{ aa → refl ; bb → refl ; cc → refl })
+    ; to∘from = λ _ → refl
+    }
+```
 
 
 ## Existentials
@@ -246,25 +275,46 @@ establish the isomorphism is identical to what we wrote when discussing
 
 Show that existentials distribute over disjunction:
 ```agda
-postulate
-  ∃-distrib-⊎ : ∀ {A : Set} {B C : A → Set} →
-    ∃[ x ] (B x ⊎ C x) ≃ (∃[ x ] B x) ⊎ (∃[ x ] C x)
+--postulate
+∃-distrib-⊎ : ∀ {A : Set} {B C : A → Set} →
+  ∃[ x ] (B x ⊎ C x) ≃ (∃[ x ] B x) ⊎ (∃[ x ] C x)
+∃-distrib-⊎ =
+  record
+    { to = λ{ ⟨ x , inj₁ bx ⟩ → inj₁ ⟨ x , bx ⟩ ; ⟨ x , inj₂ cx ⟩ → inj₂ ⟨ x , cx ⟩  }
+    ; from = λ{ (inj₁ ⟨ x , bx ⟩) → ⟨ x , inj₁ bx ⟩ ; (inj₂ ⟨ x , cx ⟩) → ⟨ x , inj₂ cx ⟩ }
+    ; from∘to = λ{ ⟨ _ , inj₁ _ ⟩ → refl ; ⟨ _ , inj₂ _ ⟩ → refl }
+    ; to∘from = λ{ (inj₁ ⟨ _ , _ ⟩) → refl ; (inj₂ ⟨ _ , _ ⟩) → refl }
+    }
 ```
 
 #### Exercise `∃×-implies-×∃` (practice)
 
 Show that an existential of conjunctions implies a conjunction of existentials:
 ```agda
-postulate
-  ∃×-implies-×∃ : ∀ {A : Set} {B C : A → Set} →
-    ∃[ x ] (B x × C x) → (∃[ x ] B x) × (∃[ x ] C x)
+--postulate
+∃×-implies-×∃ : ∀ {A : Set} {B C : A → Set} →
+  ∃[ x ] (B x × C x) → (∃[ x ] B x) × (∃[ x ] C x)
+∃×-implies-×∃ ⟨ x , ⟨ bx , cx ⟩ ⟩ = ⟨ ⟨ x , bx ⟩ , ⟨ x , cx ⟩ ⟩
 ```
 Does the converse hold? If so, prove; if not, explain why.
+```agda
+-- (∃[ n ] Even n) × (∃[ n ] Odd n) -/-> ∃[ n ] (Even n × Odd n)
+```
 
 #### Exercise `∃-⊎` (practice)
 
 Let `Tri` and `B` be as in Exercise `∀-×`.
 Show that `∃[ x ] B x` is isomorphic to `B aa ⊎ B bb ⊎ B cc`.
+```agda
+∃-× : ∀ {B : Tri → Set} → (∃[ x ] B x) ≃ (B aa ⊎ B bb ⊎ B cc)
+∃-× =
+  record
+    { to = λ{ ⟨ aa , baa ⟩ → inj₁ baa ; ⟨ bb , bbb ⟩ → inj₂ (inj₁ bbb) ; ⟨ cc , bcc ⟩ → inj₂ (inj₂ bcc) }
+    ; from = λ{ (inj₁ baa) → ⟨ aa , baa ⟩ ; (inj₂ (inj₁ bbb)) → ⟨ bb , bbb ⟩ ; (inj₂ (inj₂ bcc)) → ⟨ cc , bcc ⟩ }
+    ; from∘to = λ{ ⟨ aa , _ ⟩ → refl ; ⟨ bb , _ ⟩ → refl ; ⟨ cc , _ ⟩ → refl } 
+    ; to∘from = λ{ (inj₁ _) → refl ; (inj₂ (inj₁ bbb)) → refl ; (inj₂ (inj₂ _)) → refl }
+    }
+```
 
 
 ## An existential example
@@ -375,7 +425,64 @@ by `2 * m` and `2 * m + 1`?  Rewrite the proofs of `∃-even` and `∃-odd` when
 restated in this way.
 
 ```agda
--- Your code goes here
+open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
+open Eq using (cong; sym; trans)
+open import Data.Empty using (⊥; ⊥-elim)
+open import Data.Nat using (pred)
+open import Data.Nat.Properties using (+-comm; +-assoc; 0≢1+n; *-suc)
+
+even-∃' : ∀ {n : ℕ} → even n → ∃[ m ] (2 * m     ≡ n)
+odd-∃'  : ∀ {n : ℕ} →  odd n → ∃[ m ] (2 * m + 1 ≡ n)
+
+even-∃' even-zero                              =  ⟨ zero , refl ⟩
+even-∃' {suc n} (even-suc o) with odd-∃' o
+...                          | ⟨ m , n≡2*m+1 ⟩ =  ⟨ m + 1 ,
+  begin
+     2 * (m + 1)
+  ≡⟨ cong (2 *_) (+-comm m 1) ⟩
+     2 * (1 + m)
+  ≡⟨ *-suc 2 m ⟩
+     2 + 2 * m
+  ≡⟨⟩
+     1 + 1 + 2 * m
+  ≡⟨ +-assoc 1 1 (2 * m) ⟩
+     1 + (1 + 2 * m)
+  ≡⟨ cong suc (+-comm 1 (2 * m)) ⟩
+     1 + (2 * m + 1)
+  ≡⟨ cong suc n≡2*m+1 ⟩
+     suc n
+  ∎ ⟩
+
+odd-∃' {suc n} (odd-suc e) with even-∃' e
+...                        | ⟨ m , n≡2*m ⟩ =  ⟨ m ,
+  begin
+    2 * m + 1
+  ≡⟨ +-comm (2 * m) 1 ⟩
+    1 + 2 * m
+  ≡⟨ cong suc n≡2*m ⟩
+    suc n
+  ∎ ⟩
+
+
+∃-even' : ∀ {n : ℕ} → ∃[ m ] (2 * m     ≡ n) → even n
+∃-odd'  : ∀ {n : ℕ} → ∃[ m ] (2 * m + 1 ≡ n) →  odd n
+
+∃-even' ⟨  zero , refl ⟩  =  even-zero
+∃-even' {suc n} ⟨ suc m , n≡2*m ⟩ = even-suc (∃-odd' ⟨ m ,
+  begin
+    2 * m + 1
+  ≡⟨⟩
+    m + (1 * m) + 1
+  ≡⟨ +-assoc m (1 * m) 1 ⟩
+    m + ((1 * m) + 1)
+  ≡⟨ cong (m +_) (+-comm (1 * m) 1) ⟩
+    m + (1 + (1 * m))
+  ≡⟨ cong pred n≡2*m ⟩
+    n
+  ∎ ⟩)
+
+∃-odd' {zero} ⟨ m , suc≡zero ⟩ = ⊥-elim (0≢1+n (sym (trans (+-comm 1 (2 * m)) suc≡zero)))
+∃-odd' {suc n} ⟨ m , n≡2*m+1 ⟩ = odd-suc (∃-even' ⟨ m , cong pred (trans (+-comm 1 (2 * m)) n≡2*m+1) ⟩)
 ```
 
 #### Exercise `∃-+-≤` (practice)
@@ -384,7 +491,39 @@ Show that `y ≤ z` holds if and only if there exists a `x` such that
 `x + y ≡ z`.
 
 ```agda
--- Your code goes here
+open Eq using (subst)
+open import Data.Nat using (_≤_)
+open import Data.Nat.Properties using (≤-refl; m+n≡0⇒n≡0)
+open _≤_
+
+∃-+-≤ : ∀ {y z : ℕ} → (∃[ x ] (x + y ≡ z)) → (y ≤ z)
+∃-+-≤ {zero} {_} ⟨ _ , _ ⟩ = z≤n
+∃-+-≤ {_} {zero} ⟨ x , x+y≡0 ⟩ = subst (_≤ zero) (sym (m+n≡0⇒n≡0 x x+y≡0)) (z≤n {zero})
+∃-+-≤ {suc y} {suc z} ⟨ x , x+sucy≡sucz ⟩ = s≤s (∃-+-≤ {y} {z} ⟨ x , 
+  begin
+    x + y
+  ≡⟨ +-comm x y ⟩
+    y + x
+  ≡⟨⟩
+    pred (suc y + x)
+  ≡⟨ cong pred (+-comm (suc y) x) ⟩
+    pred (x + suc y)
+  ≡⟨ cong pred x+sucy≡sucz ⟩
+    z
+  ∎ ⟩)
+
+≤-∃-+ : ∀ {y z : ℕ} → (y ≤ z) → (∃[ x ] (x + y ≡ z))
+≤-∃-+ {zero} {z} z≤n = ⟨ z , +-comm z zero  ⟩
+≤-∃-+ {suc y} {suc z} (s≤s y≤z) with ≤-∃-+ y≤z
+... | ⟨ x , x+y≡z ⟩ = ⟨ x , begin
+                              x + suc y
+                            ≡⟨ +-comm x (suc y) ⟩
+                              suc y + x
+                            ≡⟨ cong suc (+-comm y x) ⟩
+                              suc x + y
+                            ≡⟨ cong suc x+y≡z ⟩
+                              suc z
+                            ∎ ⟩
 ```
 
 
@@ -427,13 +566,18 @@ requires extensionality.
 
 Show that existential of a negation implies negation of a universal:
 ```agda
-postulate
-  ∃¬-implies-¬∀ : ∀ {A : Set} {B : A → Set}
-    → ∃[ x ] (¬ B x)
-      --------------
-    → ¬ (∀ x → B x)
+--postulate
+∃¬-implies-¬∀ : ∀ {A : Set} {B : A → Set}
+  → ∃[ x ] (¬ B x)
+    --------------
+  → ¬ (∀ x → B x)
+
+∃¬-implies-¬∀ ⟨ x , ¬Bx ⟩ = λ x→Bx → ¬Bx (x→Bx x)
 ```
 Does the converse hold? If so, prove; if not, explain why.
+```agda
+-- TODOTODO
+```
 
 
 #### Exercise `Bin-isomorphism` (stretch) {#Bin-isomorphism}
@@ -478,7 +622,47 @@ which is a corollary of `≡Can`.
     proj₁≡→Can≡ : {cb cb′ : ∃[ b ] Can b} → proj₁ cb ≡ proj₁ cb′ → cb ≡ cb′
 
 ```agda
--- Your code goes here
+data Bin : Set where
+  ⟨⟩ : Bin
+  _O : Bin → Bin
+  _I : Bin → Bin
+
+inc  : Bin → Bin
+to   : ℕ   → Bin
+from : Bin → ℕ
+
+inc ⟨⟩ = ⟨⟩ I
+inc (b O) = b I
+inc (b I) = (inc b) O
+
+to 0 = ⟨⟩ O
+to (suc n) = inc (to n)
+
+from ⟨⟩ = 0
+from (b O) = 2 * from b
+from (b I) = 1 + 2 * from b
+
+data One : Bin → Set where
+  justI : One (⟨⟩ I)
+  appendO : {b : Bin} → One b → One (b O)
+  appendI : {b : Bin} → One b → One (b I)
+
+data Can : Bin → Set where
+  justO : Can (⟨⟩ O)
+  one-to-can : {b : Bin} → One b → Can b
+
+postulate  -- TODOTODO in this block
+  ≡One : ∀ {b : Bin} (o o′ : One b) → o ≡ o′
+  ≡Can : ∀ {b : Bin} (cb cb′ : Can b) → cb ≡ cb′
+
+ℕ≃Canb : ℕ ≃ ∃[ b ] Can b
+ℕ≃Canb =
+  record
+    { to = {!!}
+    ; from = {!!}
+    ; from∘to = {!!}
+    ; to∘from = {!!}
+    }
 ```
 
 
