@@ -945,55 +945,55 @@ can-to-n zero = justO
 can-to-n (suc n) = can⇒can-inc (can-to-n n)
 
 -- TODOTODO in this block
-inc-inc=appendO : ∀ (b : Bin) →  inc (inc b) ≡ b O
-inc-inc=appendO _ = {!!}
+--inc-inc=appendO : ∀ (b : Bin) →  inc (inc b) ≡ b O
+--inc-inc=appendO _ = {!!}
 
 
-double=appendO : ∀ {n : ℕ} → 1 ≤ n → to (2 * n) ≡ (to n) O
-double=appendO {1} _ = refl
-double=appendO {suc n} _ =
-  begin
-    to (2 * (suc n))
-  ≡⟨ cong to (*-comm 2 (suc n)) ⟩
-    to ((suc n) * 2)
-  ≡⟨⟩
-    to (2 + n * 2)
-  ≡⟨ cong (λ x → to (2 + x)) (*-comm n 2) ⟩
-    to (2 + 2 * n)
-  ≡⟨⟩
-    inc (inc (to (2 * n)))
+--double=appendO : ∀ {n : ℕ} → 1 ≤ n → to (2 * n) ≡ (to n) O
+--double=appendO {1} _ = refl
+--double=appendO {suc n} _ =
+--  begin
+--    to (2 * (suc n))
+--  ≡⟨ cong to (*-comm 2 (suc n)) ⟩
+--    to ((suc n) * 2)
+--  ≡⟨⟩
+--    to (2 + n * 2)
+--  ≡⟨ cong (λ x → to (2 + x)) (*-comm n 2) ⟩
+--    to (2 + 2 * n)
+--  ≡⟨⟩
+--    inc (inc (to (2 * n)))
+--
+--  ≡⟨ {!!} ⟩
+--    (to (suc n)) O
+--  ∎
 
-  ≡⟨ {!!} ⟩
-    (to (suc n)) O
-  ∎
+--one-from-to=id : ∀ {b : Bin} → One b → to (from b) ≡ b
+--one-from-to=id {_} justI = refl
+--one-from-to=id {b O} (appendO oneb) =
+--  begin
+--    to (from (b O))
+--  ≡⟨⟩
+--    to (2 * from b)
+--  ≡⟨ {!!} ⟩
+--    (to (from b)) O
+--  ≡⟨ cong _O (one-from-to=id oneb) ⟩
+--    b O
+--  ∎
+--one-from-to=id {b I} (appendI oneb) =
+--  begin
+--    to (from (b I))
+--  ≡⟨⟩
+--    to (1 + 2 * from b)
+--  ≡⟨⟩
+--    inc (to (2 * from b))
+--  ≡⟨ {!!} ⟩
+--    (to (from b)) I
+--  ≡⟨ cong _I (one-from-to=id oneb) ⟩
+--    b I
+--  ∎
 
-one-from-to=id : ∀ {b : Bin} → One b → to (from b) ≡ b
-one-from-to=id {_} justI = refl
-one-from-to=id {b O} (appendO oneb) =
-  begin
-    to (from (b O))
-  ≡⟨⟩
-    to (2 * from b)
-  ≡⟨ {!!} ⟩
-    (to (from b)) O
-  ≡⟨ cong _O (one-from-to=id oneb) ⟩
-    b O
-  ∎
-one-from-to=id {b I} (appendI oneb) =
-  begin
-    to (from (b I))
-  ≡⟨⟩
-    to (1 + 2 * from b)
-  ≡⟨⟩
-    inc (to (2 * from b))
-  ≡⟨ {!!} ⟩
-    (to (from b)) I
-  ≡⟨ cong _I (one-from-to=id oneb) ⟩
-    b I
-  ∎
-
-can-from-to-id : ∀ (b : Bin) → Can b → to (from b) ≡ b
-can-from-to-id b canb = {!!}
+--can-from-to-id : ∀ (b : Bin) → Can b → to (from b) ≡ b
+--can-from-to-id b canb = {!!}
 ```
 
 ## Standard library

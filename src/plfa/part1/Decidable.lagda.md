@@ -292,24 +292,49 @@ trouble normalising evidence of negation.)
 
 Analogous to the function above, define a function to decide strict inequality:
 ```agda
-postulate
-  _<?_ : ∀ (m n : ℕ) → Dec (m < n)
+--postulate
+_<?_ : ∀ (m n : ℕ) → Dec (m < n)
 ```
 
 ```agda
--- Your code goes here
+¬n<zero : ∀ {n : ℕ} → ¬ (n < zero)
+¬n<zero ()
+
+¬s<s : ∀ {m n : ℕ} → ¬ (m < n) → ¬ (suc m < suc n)
+¬s<s ¬m<n (s<s m<n) = ¬m<n m<n
+
+m     <? zero  = no ¬n<zero
+zero  <? suc n = yes z<s
+suc m <? suc n with m <? n
+...            | yes (m<n) = yes (s<s m<n)
+...            | no (¬m<n) = no (¬s<s ¬m<n)
 ```
 
 #### Exercise `_≡ℕ?_` (practice)
 
 Define a function to decide whether two naturals are equal:
 ```agda
-postulate
-  _≡ℕ?_ : ∀ (m n : ℕ) → Dec (m ≡ n)
+--postulate
+_≡ℕ?_ : ∀ (m n : ℕ) → Dec (m ≡ n)
 ```
 
 ```agda
--- Your code goes here
+open Eq using (cong; sym)
+open import Data.Nat using (pred)
+open import Function using (_∘_)
+
+0≢s : ∀ {n : ℕ} → ¬ (zero ≡ suc n)
+0≢s ()
+
+s≢s : ∀ {m n : ℕ} → ¬ (m ≡ n) → ¬ (suc m ≡ suc n)
+s≢s ¬m≡n sm≡sn = ¬m≡n (cong pred sm≡sn)
+
+zero    ≡ℕ? zero    = yes refl
+zero    ≡ℕ? (suc _) = no 0≢s
+(suc _) ≡ℕ? zero = no (0≢s ∘ sym)
+(suc m) ≡ℕ? (suc n) with m ≡ℕ? n
+...                 | yes m≡n = yes (cong suc m≡n)
+...                 | no ¬m≡n = no (s≢s ¬m≡n)
 ```
 
 
@@ -536,10 +561,23 @@ on which matches; but either is equally valid.
 
 Show that erasure relates corresponding boolean and decidable operations:
 ```agda
-postulate
-  ∧-× : ∀ {A B : Set} (x : Dec A) (y : Dec B) → ⌊ x ⌋ ∧ ⌊ y ⌋ ≡ ⌊ x ×-dec y ⌋
-  ∨-⊎ : ∀ {A B : Set} (x : Dec A) (y : Dec B) → ⌊ x ⌋ ∨ ⌊ y ⌋ ≡ ⌊ x ⊎-dec y ⌋
-  not-¬ : ∀ {A : Set} (x : Dec A) → not ⌊ x ⌋ ≡ ⌊ ¬? x ⌋
+--postulate
+∧-× : ∀ {A B : Set} (x : Dec A) (y : Dec B) → ⌊ x ⌋ ∧ ⌊ y ⌋ ≡ ⌊ x ×-dec y ⌋
+∨-⊎ : ∀ {A B : Set} (x : Dec A) (y : Dec B) → ⌊ x ⌋ ∨ ⌊ y ⌋ ≡ ⌊ x ⊎-dec y ⌋
+not-¬ : ∀ {A : Set} (x : Dec A) → not ⌊ x ⌋ ≡ ⌊ ¬? x ⌋
+
+∧-× (yes _) (yes _) = refl
+∧-× (no  _) (yes _) = refl
+∧-× (yes _) (no  _) = refl
+∧-× (no  _) (no  _) = refl
+
+∨-⊎ (yes _) (yes _) = refl
+∨-⊎ (no  _) (yes _) = refl
+∨-⊎ (yes _) (no  _) = refl
+∨-⊎ (no  _) (no  _) = refl
+
+not-¬ (yes _) = refl
+not-¬ (no  _) = refl
 ```
 
 #### Exercise `iff-erasure` (recommended)
@@ -548,14 +586,28 @@ Give analogues of the `_⇔_` operation from
 Chapter [Isomorphism](/Isomorphism/#iff),
 operation on booleans and decidables, and also show the corresponding erasure:
 ```agda
-postulate
-  _iff_ : Bool → Bool → Bool
-  _⇔-dec_ : ∀ {A B : Set} → Dec A → Dec B → Dec (A ⇔ B)
-  iff-⇔ : ∀ {A B : Set} (x : Dec A) (y : Dec B) → ⌊ x ⌋ iff ⌊ y ⌋ ≡ ⌊ x ⇔-dec y ⌋
+--postulate
+_iff_ : Bool → Bool → Bool
+_⇔-dec_ : ∀ {A B : Set} → Dec A → Dec B → Dec (A ⇔ B)
+iff-⇔ : ∀ {A B : Set} (x : Dec A) (y : Dec B) → ⌊ x ⌋ iff ⌊ y ⌋ ≡ ⌊ x ⇔-dec y ⌋
 ```
 
 ```agda
--- Your code goes here
+open _⇔_
+
+false iff false = true
+true  iff true  = true
+_     iff _     = false
+
+_⇔-dec_ (yes a) (yes b) = yes (record { to = λ _ → b ; from = λ _ → a })
+_⇔-dec_ (no ¬a) (yes b) = no (λ a⇔b → ¬a ((from a⇔b) b))
+_⇔-dec_ (yes a) (no ¬b) = no (λ a⇔b → ¬b ((to a⇔b) a))
+_⇔-dec_ (no ¬a) (no ¬b) = yes (record { to = λ a → ⊥-elim (¬a a) ; from = λ b → ⊥-elim (¬b b) })
+
+iff-⇔ (yes _) (yes _) = refl
+iff-⇔ (no  _) (yes _) = refl
+iff-⇔ (yes _) (no  _) = refl
+iff-⇔ (no  _) (no  _) = refl
 ```
 
 ## Proof by reflection {#proof-by-reflection}
@@ -629,6 +681,19 @@ True Q = T ⌊ Q ⌋
 #### Exercise `False` (practice)
 
 Give analogues of `True`, `toWitness`, and `fromWitness` which work with *negated* properties. Call these `False`, `toWitnessFalse`, and `fromWitnessFalse`.
+```agda
+False : ∀ {A} → Dec A → Set
+False (no  _) = ⊤
+False (yes _) = ⊥
+
+toWitnessFalse : ∀ {A : Set} {D : Dec A} → False D → ¬ A
+toWitnessFalse {A} {no ¬x} tt = ¬x
+toWitnessFalse {A} {yes x} ()
+
+fromWitnessFalse : ∀ {A : Set} {D : Dec A} → ¬ A → False D
+fromWitnessFalse {A} {no ¬x} _  = tt
+fromWitnessFalse {A} {yes x} ¬x = ¬x x
+```
 
 
 ## Standard Library
